@@ -1,1 +1,271 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KBC Smart Quiz App</title>
+  <style>
+    body {
+      font-family: 'Trebuchet MS', sans-serif;
+      background: linear-gradient(to bottom, #000033, #000000);
+      color: white;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    h2, h3 {
+      color: gold;
+    }
+    input, select, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: none;
+    }
+    #quiz-container, #login-container, #signup-container {
+      margin-top: 50px;
+    }
+    .options button {
+      display: block;
+      margin: 10px auto;
+      background-color: #1a1a1a;
+      color: white;
+      width: 60%;
+      transition: background 0.3s;
+    }
+    .options button:hover {
+      background-color: #0044cc;
+    }
+    .correct {
+      background-color: green;
+    }
+    .incorrect {
+      background-color: red;
+    }
+    #timer {
+      font-size: 2rem;
+      color: cyan;
+      margin-top: 20px;
+    }
+    #prize-ladder {
+      text-align: left;
+      margin: 20px auto;
+      width: 200px;
+    }
+    #host-message {
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+    #lifelines button {
+      margin: 5px;
+      padding: 5px 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="login-container">
+    <h2>Login</h2>
+    <input type="text" id="login-username" placeholder="Username" />
+    <input type="password" id="login-password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <p>Don't have an account? <a href="#" onclick="showSignup()">Sign Up</a></p>
+  </div>
+
+  <div id="signup-container" style="display:none">
+    <h2>Sign Up</h2>
+    <input type="text" id="signup-username" placeholder="Username" />
+    <input type="password" id="signup-password" placeholder="Password" />
+    <button onclick="signup()">Sign Up</button>
+    <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+  </div>
+
+  <div id="quiz-container" style="display:none">
+    <div id="host-message">Welcome to KBC!</div>
+    <select id="category-select" onchange="loadCategory()"></select>
+    <div id="lifelines">
+      <button onclick="use5050()">50:50</button>
+      <button onclick="quitGame()">Quit Game</button>
+    </div>
+    <div id="question-box">
+      <h3 id="question-text"></h3>
+      <div class="options">
+        <button class="option" id="A" onclick="selectAnswer('A')"></button>
+        <button class="option" id="B" onclick="selectAnswer('B')"></button>
+        <button class="option" id="C" onclick="selectAnswer('C')"></button>
+        <button class="option" id="D" onclick="selectAnswer('D')"></button>
+      </div>
+    </div>
+
+    <div id="timer">20</div>
+    <div id="prize-ladder"></div>
+  </div>
+
+  <!-- Audio Elements -->
+  <audio id="correctSound" src="sounds/correct.mp3"></audio>
+  <audio id="wrongSound" src="sounds/wrong.mp3"></audio>
+  <audio id="lockSound" src="sounds/lock.mp3"></audio>
+  <audio id="timeoutSound" src="sounds/times-up.mp3"></audio>
+
+  <script>
+    let questions = {
+      "General Knowledge": [
+        {
+          question: "Who is known as the father of the Indian Constitution?",
+          options: {
+            A: "Mahatma Gandhi",
+            B: "Jawaharlal Nehru",
+            C: "B. R. Ambedkar",
+            D: "Sardar Patel"
+          },
+          answer: "C"
+        },
+        {
+          question: "What is the capital of Nepal?",
+          options: {
+            A: "Pokhara",
+            B: "Lalitpur",
+            C: "Bhaktapur",
+            D: "Kathmandu"
+          },
+          answer: "D"
+        }
+      ]
+    };
+
+    let currentQuestionIndex = 0;
+    let selectedCategory = '';
+    let timerInterval;
+    let timeLeft = 20;
+    let lifelineUsed = false;
+
+    function showSignup() {
+      document.getElementById('login-container').style.display = 'none';
+      document.getElementById('signup-container').style.display = 'block';
+    }
+    function showLogin() {
+      document.getElementById('signup-container').style.display = 'none';
+      document.getElementById('login-container').style.display = 'block';
+    }
+    function login() {
+      document.getElementById('login-container').style.display = 'none';
+      document.getElementById('quiz-container').style.display = 'block';
+      loadCategories();
+    }
+    function signup() {
+      alert('Signup complete!');
+      showLogin();
+    }
+
+    function loadCategories() {
+      const select = document.getElementById('category-select');
+      select.innerHTML = '<option>Select Category</option>';
+      Object.keys(questions).forEach(category => {
+        const opt = document.createElement('option');
+        opt.value = category;
+        opt.textContent = category;
+        select.appendChild(opt);
+      });
+    }
+
+    function loadCategory() {
+      selectedCategory = document.getElementById('category-select').value;
+      if (selectedCategory && questions[selectedCategory]) {
+        currentQuestionIndex = 0;
+        lifelineUsed = false;
+        loadQuestion();
+        updatePrizeLadder();
+      }
+    }
+
+    function loadQuestion() {
+      clearInterval(timerInterval);
+      timeLeft = 20;
+      document.getElementById('timer').textContent = timeLeft;
+      const q = questions[selectedCategory][currentQuestionIndex];
+      document.getElementById('question-text').textContent = q.question;
+      ['A','B','C','D'].forEach(opt => {
+        document.getElementById(opt).textContent = q.options[opt];
+        document.getElementById(opt).className = 'option';
+        document.getElementById(opt).style.display = 'block';
+      });
+      startTimer();
+    }
+
+    function selectAnswer(choice) {
+      playSound('lockSound');
+      setTimeout(() => {
+        const correct = questions[selectedCategory][currentQuestionIndex].answer;
+        if (choice === correct) {
+          document.getElementById(choice).classList.add('correct');
+          playSound('correctSound');
+        } else {
+          document.getElementById(choice).classList.add('incorrect');
+          document.getElementById(correct).classList.add('correct');
+          playSound('wrongSound');
+        }
+        setTimeout(() => {
+          nextQuestion();
+        }, 2000);
+      }, 1000);
+    }
+
+    function nextQuestion() {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < questions[selectedCategory].length) {
+        loadQuestion();
+      } else {
+        alert(`Level Complete!`);
+        document.getElementById('quiz-container').style.display = 'none';
+        document.getElementById('login-container').style.display = 'block';
+      }
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = timeLeft;
+        if (timeLeft === 0) {
+          clearInterval(timerInterval);
+          playSound('timeoutSound');
+          nextQuestion();
+        }
+      }, 1000);
+    }
+
+    function updatePrizeLadder() {
+      const ladder = document.getElementById('prize-ladder');
+      ladder.innerHTML = '';
+      for (let i = questions[selectedCategory].length; i > 0; i--) {
+        const div = document.createElement('div');
+        div.textContent = `Prize Level ${i}`;
+        ladder.appendChild(div);
+      }
+    }
+
+    function playSound(id) {
+      const sound = document.getElementById(id);
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+    }
+
+    function use5050() {
+      if (lifelineUsed) return alert("Lifeline already used");
+      const q = questions[selectedCategory][currentQuestionIndex];
+      const correct = q.answer;
+      const incorrects = ['A','B','C','D'].filter(opt => opt !== correct);
+      const toHide = incorrects.sort(() => 0.5 - Math.random()).slice(0, 2);
+      toHide.forEach(id => document.getElementById(id).style.display = 'none');
+      lifelineUsed = true;
+    }
+
+    function quitGame() {
+      alert("You quit the game!");
+      location.reload();
+    }
+  </script>
+</body>
+</html>
 

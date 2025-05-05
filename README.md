@@ -107,28 +107,26 @@
   </div>
 
   <script>
-    const questions = {
-      "General Knowledge": [
-        {
-          question: "Who is the President of India in 2025?",
-          options: ["Ram Nath Kovind", "Droupadi Murmu", "Narendra Modi", "Amit Shah"],
-          answer: "Droupadi Murmu"
-        },
-        {
-          question: "Which city is known as the Pink City?",
-          options: ["Udaipur", "Jaipur", "Jodhpur", "Agra"],
-          answer: "Jaipur"
-        }
-      ],
-      "Math": [
-        {
-          question: "What is 12 × 12?",
-          options: ["144", "121", "132", "142"],
-          answer: "144"
-        }
-      ]
-    };
+const questions = [
+    { question: "What is the capital of Australia?", category: "General Knowledge", options: ["Sydney", " Melbourne, "Canberra", "Brisbane"], answer: 2 },
+    { question: "In which year did World War II end?", category: "General Knowledge", options: ["1945", "1942", "1950", "1899"], answer: 0 },
+    { question: "Who invented the equals sign (=) ?", category: "Math", options: ["Joseph Huddart", "Leonhard Euler", "William Oughtred", "Robert Recorde"], answer: 3 },
+    { question: "Who discovered Derivatives?", category: "Math", options: ["Gottfried Leibniz", "Vincenzo Riccati", "William Playfair", " Leonhard Euler"], answer: 0 },
+    { question: "Choose the correct spelling:", category: "English", options: ["Recieve", "Receive", "Receeve", "Receiv"], answer: 1 },
+    { question: "Synonym of 'Happy'?", category: "English", options: ["Sad", "Angry", "Joyful", "Upset"], answer: 2 },
+    { question: "Who wrote 'Muna Madan'?", category: "Nepali", options: ["Laxmi Prasad Devkota", "Bhanubhakta", "Parijat", "Lekhnath Paudyal"], answer: 0 },
+    { question: "Nepali New Year falls on?", category: "Nepali", options: ["Baisakh 1", "Ashad 15", "Kartik 5", "Chaitra 30"], answer: 0 },
+    { question: "What is the chemical symbol of water?", category: "Chemistry", options: ["H2O", "O2", "CO2", "HO2"], answer: 0 },
+    { question: "Atomic number of Oxygen?", category: "Chemistry", options: ["6", "7", "8", "9"], answer: 2 },
+    { question: "What is the speed of light?", category: "Physics", options: ["299,792,458 m/s", "300,000,000 m/s", "150,000,000 m/s", "3,000 m/s"], answer: 0 },
+    { question: "How much water a pump of 2kW can raise in one minute to a height of 10m? (g=10m/s2)", category: "Physics", options: ["1000 li", "1200 li", "10 li", "2000 li"], answer: 1 }
+  ];
 
+     const prizeLevels = [1000, 5000, 10000, 40000, 100000, 160000, 500000, 640000, 1250000, 2500000, 50000000, 10000000];
+    
+
+
+    
     let currentCategory = '';
     let currentQuestionIndex = 0;
     let timer;

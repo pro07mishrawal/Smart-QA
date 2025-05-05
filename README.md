@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,7 +15,7 @@
   <!-- Quiz Screen -->
   <div id="quiz-screen" style="display:none;">
     <div class="header">
-      <h1>Kaun Banega Crorepati</h1>
+      <h1>Ko Bancha Crorepati</h1>
       <div id="user-info"></div>
       <select id="category-selector" onchange="changeCategory(this.value)">
         <option value="General Knowledge">General Knowledge</option>

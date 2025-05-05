@@ -1,50 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart KBC Quiz App</title>
+  <title>KBC Smart Quiz App</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Login/Signup UI -->
-  <div id="auth-screen">
-    <h2>KBC Smart Quiz Login</h2>
-    <input type="text" id="username" placeholder="Enter your name" />
-    <button onclick="login()">Start Quiz</button>
+  <!-- Login/Signup Section -->
+  <div id="auth-container">
+    <h2>🔐 KBC Smart Quiz Login</h2>
+    <input type="text" id="username" placeholder="Enter Username" />
+    <input type="password" id="password" placeholder="Enter Password" />
+    <button onclick="login()">Login</button>
+    <button onclick="signup()">Sign Up</button>
   </div>
 
-  <!-- Quiz Screen -->
-  <div id="quiz-screen" style="display:none;">
+  <!-- Quiz Section -->
+  <div id="quiz-container" class="hidden">
     <div class="header">
-      <h1>Ko Bancha Crorepati</h1>
       <div id="user-info"></div>
-      <select id="category-selector" onchange="changeCategory(this.value)">
-        <option value="General Knowledge">General Knowledge</option>
-        <option value="Math">Math</option>
-        <option value="English">English</option>
-        <option value="Nepali">Nepali</option>
-        <option value="Chemistry">Chemistry</option>
-        <option value="Physics">Physics</option>
-        <option value="Computer">Computer</option>
-      </select>
+      <select id="categorySelector"></select>
+      <div class="timer" id="timer">⏳ 20</div>
+      <div class="super-sawaal hidden" id="superSawaal">🔥 Super Sawaal!</div>
     </div>
 
-    <div id="quiz-box">
-      <div id="question-number"></div>
-      <div id="question-text"></div>
-      <div id="options"></div>
-      <div id="host-message"></div>
-      <div id="super-sawaal">🔥 Super Sawaal!</div>
-      <div id="timer">20</div>
+    <div class="question-box">
+      <h2 id="question-text">Loading...</h2>
+      <div class="options">
+        <button onclick="lockAnswer('A')" id="A"></button>
+        <button onclick="lockAnswer('B')" id="B"></button>
+        <button onclick="lockAnswer('C')" id="C"></button>
+        <button onclick="lockAnswer('D')" id="D"></button>
+      </div>
     </div>
 
-    <div id="prize-board"></div>
+    <div id="host-message"></div>
+    <div class="message" id="message"></div>
 
-    <div id="summary" style="display:none;">
-      <h2>Quiz Completed!</h2>
-      <p id="summary-text"></p>
-      <button onclick="restartQuiz()">Restart</button>
-    </div>
+    <div class="ladder" id="ladder"></div>
+    <div id="team">Team: Promish Rawal, Sandesh GC, Subodh Karki, Saurav Thapa, Aaryan Chhetri</div>
+    <button onclick="restartGame()" class="hidden" id="restartBtn">🔄 Restart</button>
   </div>
+
+  <audio id="correctSound" src="sounds/correct.mp3"></audio>
+  <audio id="wrongSound" src="sounds/wrong.mp3"></audio>
+  <audio id="lockSound" src="sounds/lock.mp3"></audio>
+  <audio id="levelUpSound" src="sounds/level-up.mp3"></audio>
 
   <script src="script.js"></script>
 </body>

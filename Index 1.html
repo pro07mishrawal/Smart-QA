@@ -1,52 +1,262 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KBC Smart Quiz App</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: 'Verdana', sans-serif;
+      background: linear-gradient(#0f0c29, #302b63, #24243e);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 2.5rem;
+      color: gold;
+    }
+    select, button {
+      padding: 10px;
+      margin: 10px;
+      font-size: 1rem;
+      border-radius: 10px;
+    }
+    #question-box {
+      margin: 20px auto;
+      padding: 20px;
+      background: #111;
+      border-radius: 10px;
+      max-width: 600px;
+    }
+    #options li {
+      background: #333;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      list-style: none;
+    }
+    #options li.correct { background-color: green; }
+    #options li.wrong { background-color: red; }
+    #options li.selected { border: 2px solid yellow; }
+    #timer {
+      font-size: 2em;
+      color: yellow;
+    }
+    .lifeline {
+      padding: 10px 20px;
+      background: #ffcc00;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      margin: 10px;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+    .lifeline:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      background: #222;
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-  <!-- Login/Signup Section -->
-  <div id="auth-container">
-    <h2>🔐 KBC Smart Quiz Login</h2>
-    <input type="text" id="username" placeholder="Enter Username" />
-    <input type="password" id="password" placeholder="Enter Password" />
-    <button onclick="login()">Login</button>
-    <button onclick="signup()">Sign Up</button>
+  <h1>🎓 KBC Smart Quiz App</h1>
+  <p>Welcome, <strong>Guest</strong></p>
+  <select id="category-selector">
+    <option disabled selected>Select Category</option>
+  </select>
+
+  <div id="lifelines">
+    <button id="phone-lifeline" class="lifeline">📞 Phone a Friend</button>
+    <button id="fifty-fifty" class="lifeline">🌓 50:50</button>
   </div>
 
-  <!-- Quiz Section -->
-  <div id="quiz-container" class="hidden">
-    <div class="header">
-      <div id="user-info"></div>
-      <select id="categorySelector"></select>
-      <div class="timer" id="timer">⏳ 20</div>
-      <div class="super-sawaal hidden" id="superSawaal">🔥 Super Sawaal!</div>
-    </div>
-
-    <div class="question-box">
-      <h2 id="question-text">Loading...</h2>
-      <div class="options">
-        <button onclick="lockAnswer('A')" id="A"></button>
-        <button onclick="lockAnswer('B')" id="B"></button>
-        <button onclick="lockAnswer('C')" id="C"></button>
-        <button onclick="lockAnswer('D')" id="D"></button>
-      </div>
-    </div>
-
-    <div id="host-message"></div>
-    <div class="message" id="message"></div>
-
-    <div class="ladder" id="ladder"></div>
-    <div id="team">Team: Promish Rawal, Sandesh GC, Subodh Karki, Saurav Thapa, Aaryan Chhetri</div>
-    <button onclick="restartGame()" class="hidden" id="restartBtn">🔄 Restart</button>
+  <div id="question-box">
+    <h2 id="question">Question will appear here</h2>
+    <ul id="options"></ul>
+    <div id="timer">⏳ 20</div>
+    <button id="lock-btn">🔒 Lock Answer</button>
+    <div id="message"></div>
   </div>
 
-  <audio id="correctSound" src="sounds/correct.mp3"></audio>
-  <audio id="wrongSound" src="sounds/wrong.mp3"></audio>
-  <audio id="lockSound" src="sounds/lock.mp3"></audio>
-  <audio id="levelUpSound" src="sounds/level-up.mp3"></audio>
+  <!-- Phone-a-Friend Modal -->
+  <div id="phone-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>📞 Calling Your Friend...</h2>
+      <p id="friend-response">"Hmm... I think it's Option B."</p>
+      <p id="call-timer">Call ends in 30s</p>
+      <button onclick="closePhoneCall()">End Call</button>
+    </div>
+  </div>
 
-  <script src="script.js"></script>
+  <script>
+    const questions = {
+      "General Knowledge": [
+        {
+          question: "Who is the President of India in 2025?",
+          options: ["Ram Nath Kovind", "Droupadi Murmu", "Narendra Modi", "Amit Shah"],
+          answer: "Droupadi Murmu"
+        },
+        {
+          question: "Which city is known as the Pink City?",
+          options: ["Udaipur", "Jaipur", "Jodhpur", "Agra"],
+          answer: "Jaipur"
+        }
+      ],
+      "Math": [
+        {
+          question: "What is 12 × 12?",
+          options: ["144", "121", "132", "142"],
+          answer: "144"
+        }
+      ]
+    };
+
+    let currentCategory = '';
+    let currentQuestionIndex = 0;
+    let timer;
+    let timeLeft = 20;
+    let locked = false;
+
+    const selector = document.getElementById("category-selector");
+    const questionBox = document.getElementById("question");
+    const optionsList = document.getElementById("options");
+    const timerDisplay = document.getElementById("timer");
+    const messageBox = document.getElementById("message");
+
+    Object.keys(questions).forEach(cat => {
+      const opt = document.createElement("option");
+      opt.value = cat;
+      opt.textContent = cat;
+      selector.appendChild(opt);
+    });
+
+    selector.addEventListener("change", () => {
+      currentCategory = selector.value;
+      currentQuestionIndex = 0;
+      loadQuestion();
+    });
+
+    function loadQuestion() {
+      locked = false;
+      clearInterval(timer);
+      timeLeft = 20;
+      updateTimer();
+      const q = questions[currentCategory][currentQuestionIndex];
+      questionBox.textContent = q.question;
+      optionsList.innerHTML = '';
+      q.options.forEach(opt => {
+        const li = document.createElement("li");
+        li.textContent = opt;
+        li.onclick = () => selectAnswer(li);
+        optionsList.appendChild(li);
+      });
+      timer = setInterval(() => {
+        timeLeft--;
+        updateTimer();
+        if (timeLeft === 0) {
+          lockAnswer();
+        }
+      }, 1000);
+    }
+
+    function updateTimer() {
+      timerDisplay.textContent = `⏳ ${timeLeft}`;
+    }
+
+    function selectAnswer(li) {
+      if (locked) return;
+      document.querySelectorAll("#options li").forEach(el => el.classList.remove("selected"));
+      li.classList.add("selected");
+    }
+
+    document.getElementById("lock-btn").addEventListener("click", () => {
+      lockAnswer();
+    });
+
+    function lockAnswer() {
+      if (locked) return;
+      const selected = document.querySelector("#options li.selected");
+      if (!selected) {
+        messageBox.textContent = "Please select an answer!";
+        return;
+      }
+
+      locked = true;
+      clearInterval(timer);
+      const correct = questions[currentCategory][currentQuestionIndex].answer;
+      setTimeout(() => {
+        if (selected.textContent === correct) {
+          selected.classList.add("correct");
+          messageBox.textContent = "✅ Correct! 🎉";
+          currentQuestionIndex++;
+          setTimeout(() => {
+            if (currentQuestionIndex < questions[currentCategory].length) {
+              loadQuestion();
+              messageBox.textContent = '';
+            } else {
+              messageBox.textContent = `🏆 Level Complete!`;
+            }
+          }, 2000);
+        } else {
+          selected.classList.add("wrong");
+          messageBox.textContent = "❌ Wrong Answer.";
+        }
+      }, 1000);
+    }
+
+    // 📞 Phone a Friend
+    document.getElementById("phone-lifeline").addEventListener("click", () => {
+      document.getElementById("phone-modal").classList.remove("hidden");
+      startCallTimer();
+      document.getElementById("phone-lifeline").disabled = true;
+    });
+
+    let callSeconds = 30;
+    let callInterval;
+
+    function startCallTimer() {
+      callSeconds = 30;
+      callInterval = setInterval(() => {
+        callSeconds--;
+        document.getElementById("call-timer").textContent = `Call ends in ${callSeconds}s`;
+        if (callSeconds === 0) {
+          closePhoneCall();
+        }
+      }, 1000);
+    }
+
+    function closePhoneCall() {
+      clearInterval(callInterval);
+      document.getElementById("phone-modal").classList.add("hidden");
+    }
+
+    // 🌓 50:50 Lifeline
+    document.getElementById("fifty-fifty").addEventListener("click", () => {
+      const correct = questions[currentCategory][currentQuestionIndex].answer;
+      const options = Array.from(document.querySelectorAll("#options li"));
+      const incorrect = options.filter(opt => opt.textContent !== correct);
+      const toHide = incorrect.sort(() => 0.5 - Math.random()).slice(0, 2);
+      toHide.forEach(opt => opt.style.visibility = "hidden");
+      document.getElementById("fifty-fifty").disabled = true;
+    });
+  </script>
 </body>
 </html>

@@ -5,61 +5,76 @@
   <title>KBC Smart Quiz App</title>
   <style>
     body {
-      font-family: 'Trebuchet MS', sans-serif;
-      background: linear-gradient(to bottom, #000033, #000000);
-      color: white;
+      font-family: 'Verdana', sans-serif;
+      background-color: #0c0032;
+      color: #fff;
       margin: 0;
       padding: 0;
       text-align: center;
     }
-    h2, h3 {
+    h1, h2 {
       color: gold;
     }
+    #login-container, #signup-container, #quiz-container {
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+      background: #1a1a40;
+      border-radius: 10px;
+    }
     input, select, button {
-      margin: 10px;
+      width: 80%;
+      margin: 10px 0;
       padding: 10px;
-      font-size: 1rem;
+      font-size: 1em;
       border-radius: 5px;
       border: none;
     }
-    #quiz-container, #login-container, #signup-container {
-      margin-top: 50px;
+    button {
+      background-color: #fdbb2d;
+      cursor: pointer;
     }
-    .options button {
-      display: block;
-      margin: 10px auto;
-      background-color: #1a1a1a;
-      color: white;
-      width: 60%;
-      transition: background 0.3s;
+    button:hover {
+      background-color: #fcb045;
     }
-    .options button:hover {
-      background-color: #0044cc;
-    }
-    .correct {
-      background-color: green;
-    }
-    .incorrect {
-      background-color: red;
-    }
-    #timer {
-      font-size: 2rem;
-      color: cyan;
+    #question-box {
       margin-top: 20px;
     }
-    #prize-ladder {
-      text-align: left;
-      margin: 20px auto;
-      width: 200px;
+    #timer {
+      font-size: 1.5em;
+      color: cyan;
     }
-    #host-message {
-      font-style: italic;
-      margin-bottom: 20px;
+    #options button {
+      display: block;
+      margin: 10px auto;
+      width: 90%;
     }
-    #lifelines button {
-      margin: 5px;
-      padding: 5px 15px;
+    .correct { background-color: green !important; }
+    .incorrect { background-color: red !important; }
+    #super-sawaal {
+      display: none;
+      color: red;
       font-weight: bold;
+    }
+    #ladder {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+      background-color: #1c1c3c;
+      border-radius: 10px;
+    }
+    #ladder li {
+      padding: 5px;
+      border-bottom: 1px solid #444;
+    }
+    #ladder li.active {
+      background-color: gold;
+      color: black;
+    }
+    #team {
+      margin-top: 30px;
+      font-size: 0.9em;
+      color: #ccc;
     }
   </style>
 </head>
@@ -69,10 +84,10 @@
     <input type="text" id="login-username" placeholder="Username" />
     <input type="password" id="login-password" placeholder="Password" />
     <button onclick="login()">Login</button>
-    <p>Don't have an account? <a href="#" onclick="showSignup()">Sign Up</a></p>
+    <p>Don't have an account? <a href="#" onclick="showSignup()">Sign up</a></p>
   </div>
 
-  <div id="signup-container" style="display:none">
+  <div id="signup-container" style="display: none;">
     <h2>Sign Up</h2>
     <input type="text" id="signup-username" placeholder="Username" />
     <input type="password" id="signup-password" placeholder="Password" />
@@ -80,64 +95,59 @@
     <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
   </div>
 
-  <div id="quiz-container" style="display:none">
-    <div id="host-message">Welcome to KBC!</div>
-    <select id="category-select" onchange="loadCategory()"></select>
-    <div id="lifelines">
-      <button onclick="use5050()">50:50</button>
-      <button onclick="quitGame()">Quit Game</button>
-    </div>
+  <div id="quiz-container" style="display: none;">
+    <h1>KBC Smart Quiz</h1>
+    <select id="category-selector" onchange="loadQuestions()">
+      <option value="">Select Category</option>
+      <option value="general">General Knowledge</option>
+      <option value="math">Math</option>
+      <option value="english">English</option>
+      <option value="nepali">Nepali</option>
+      <option value="chemistry">Chemistry</option>
+      <option value="physics">Physics</option>
+      <option value="computer">Computer</option>
+    </select>
+
     <div id="question-box">
-      <h3 id="question-text"></h3>
-      <div class="options">
-        <button class="option" id="A" onclick="selectAnswer('A')"></button>
-        <button class="option" id="B" onclick="selectAnswer('B')"></button>
-        <button class="option" id="C" onclick="selectAnswer('C')"></button>
-        <button class="option" id="D" onclick="selectAnswer('D')"></button>
+      <div id="timer">⏳ 20</div>
+      <div id="question"></div>
+      <div id="options"></div>
+      <div id="super-sawaal">🔥 Super Sawaal!</div>
+      <div id="host-message"></div>
+      <div id="controls">
+        <button onclick="use5050()">50:50</button>
+        <button onclick="quitGame()">Quit Game</button>
       </div>
     </div>
 
-    <div id="timer">20</div>
-    <div id="prize-ladder"></div>
+    <div id="prize-ladder">
+      <h3>Prize Ladder</h3>
+      <ul id="ladder"></ul>
+    </div>
+    <div id="team">
+      <p>Team Members: Promish Rawal, Sandesh GC, Subodh Karki, Saurav Thapa, Aaryan Chhetri</p>
+    </div>
   </div>
 
-  <!-- Audio Elements -->
-  <audio id="correctSound" src="sounds/correct.mp3"></audio>
-  <audio id="wrongSound" src="sounds/wrong.mp3"></audio>
-  <audio id="lockSound" src="sounds/lock.mp3"></audio>
-  <audio id="timeoutSound" src="sounds/times-up.mp3"></audio>
-
   <script>
-    let questions = {
-      "General Knowledge": [
+    const questions = {
+      general: [
         {
-          question: "Who is known as the father of the Indian Constitution?",
-          options: {
-            A: "Mahatma Gandhi",
-            B: "Jawaharlal Nehru",
-            C: "B. R. Ambedkar",
-            D: "Sardar Patel"
-          },
-          answer: "C"
+          q: "What is the capital of Nepal?",
+          options: ["Pokhara", "Kathmandu", "Biratnagar", "Lalitpur"],
+          answer: 1,
+          super: false
         },
         {
-          question: "What is the capital of Nepal?",
-          options: {
-            A: "Pokhara",
-            B: "Lalitpur",
-            C: "Bhaktapur",
-            D: "Kathmandu"
-          },
-          answer: "D"
+          q: "Which is the longest river in the world?",
+          options: ["Amazon", "Ganga", "Nile", "Mississippi"],
+          answer: 2,
+          super: true
         }
       ]
     };
 
-    let currentQuestionIndex = 0;
-    let selectedCategory = '';
-    let timerInterval;
-    let timeLeft = 20;
-    let lifelineUsed = false;
+    let currentQ = 0, currentCategory = '', score = 0, timer, timeLeft = 20, used5050 = false;
 
     function showSignup() {
       document.getElementById('login-container').style.display = 'none';
@@ -150,119 +160,83 @@
     function login() {
       document.getElementById('login-container').style.display = 'none';
       document.getElementById('quiz-container').style.display = 'block';
-      loadCategories();
     }
     function signup() {
-      alert('Signup complete!');
+      alert("Account created! Please login.");
       showLogin();
     }
 
-    function loadCategories() {
-      const select = document.getElementById('category-select');
-      select.innerHTML = '<option>Select Category</option>';
-      Object.keys(questions).forEach(category => {
-        const opt = document.createElement('option');
-        opt.value = category;
-        opt.textContent = category;
-        select.appendChild(opt);
-      });
+    function loadQuestions() {
+      currentCategory = document.getElementById('category-selector').value;
+      if (!currentCategory) return;
+      currentQ = 0; score = 0; used5050 = false;
+      showQuestion();
     }
 
-    function loadCategory() {
-      selectedCategory = document.getElementById('category-select').value;
-      if (selectedCategory && questions[selectedCategory]) {
-        currentQuestionIndex = 0;
-        lifelineUsed = false;
-        loadQuestion();
-        updatePrizeLadder();
-      }
-    }
-
-    function loadQuestion() {
-      clearInterval(timerInterval);
-      timeLeft = 20;
-      document.getElementById('timer').textContent = timeLeft;
-      const q = questions[selectedCategory][currentQuestionIndex];
-      document.getElementById('question-text').textContent = q.question;
-      ['A','B','C','D'].forEach(opt => {
-        document.getElementById(opt).textContent = q.options[opt];
-        document.getElementById(opt).className = 'option';
-        document.getElementById(opt).style.display = 'block';
+    function showQuestion() {
+      const qObj = questions[currentCategory][currentQ];
+      document.getElementById('question').textContent = qObj.q;
+      const options = document.getElementById('options');
+      options.innerHTML = '';
+      qObj.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.textContent = opt;
+        btn.onclick = () => lockAnswer(idx);
+        options.appendChild(btn);
       });
+      document.getElementById('super-sawaal').style.display = qObj.super ? 'block' : 'none';
+      document.getElementById('host-message').textContent = '';
       startTimer();
     }
 
-    function selectAnswer(choice) {
-      playSound('lockSound');
-      setTimeout(() => {
-        const correct = questions[selectedCategory][currentQuestionIndex].answer;
-        if (choice === correct) {
-          document.getElementById(choice).classList.add('correct');
-          playSound('correctSound');
-        } else {
-          document.getElementById(choice).classList.add('incorrect');
-          document.getElementById(correct).classList.add('correct');
-          playSound('wrongSound');
-        }
-        setTimeout(() => {
-          nextQuestion();
-        }, 2000);
-      }, 1000);
-    }
-
-    function nextQuestion() {
-      currentQuestionIndex++;
-      if (currentQuestionIndex < questions[selectedCategory].length) {
-        loadQuestion();
-      } else {
-        alert(`Level Complete!`);
-        document.getElementById('quiz-container').style.display = 'none';
-        document.getElementById('login-container').style.display = 'block';
-      }
-    }
-
     function startTimer() {
-      timerInterval = setInterval(() => {
+      clearInterval(timer);
+      timeLeft = 20;
+      document.getElementById('timer').textContent = `⏳ ${timeLeft}`;
+      timer = setInterval(() => {
         timeLeft--;
-        document.getElementById('timer').textContent = timeLeft;
-        if (timeLeft === 0) {
-          clearInterval(timerInterval);
-          playSound('timeoutSound');
-          nextQuestion();
+        document.getElementById('timer').textContent = `⏳ ${timeLeft}`;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          lockAnswer(-1);
         }
       }, 1000);
     }
 
-    function updatePrizeLadder() {
-      const ladder = document.getElementById('prize-ladder');
-      ladder.innerHTML = '';
-      for (let i = questions[selectedCategory].length; i > 0; i--) {
-        const div = document.createElement('div');
-        div.textContent = `Prize Level ${i}`;
-        ladder.appendChild(div);
-      }
-    }
-
-    function playSound(id) {
-      const sound = document.getElementById(id);
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
+    function lockAnswer(index) {
+      clearInterval(timer);
+      const qObj = questions[currentCategory][currentQ];
+      const options = document.getElementById('options').children;
+      document.getElementById('host-message').textContent = 'Computer ji, lock kar diya jaye...';
+      setTimeout(() => {
+        for (let i = 0; i < options.length; i++) {
+          if (i === qObj.answer) options[i].classList.add('correct');
+          else if (i === index) options[i].classList.add('incorrect');
+        }
+        if (index === qObj.answer) score++;
+        currentQ++;
+        setTimeout(() => {
+          if (currentQ < questions[currentCategory].length) showQuestion();
+          else document.getElementById('host-message').textContent = `Level ${currentCategory} is complete!`;
+        }, 2000);
+      }, 2000);
     }
 
     function use5050() {
-      if (lifelineUsed) return alert("Lifeline already used");
-      const q = questions[selectedCategory][currentQuestionIndex];
-      const correct = q.answer;
-      const incorrects = ['A','B','C','D'].filter(opt => opt !== correct);
-      const toHide = incorrects.sort(() => 0.5 - Math.random()).slice(0, 2);
-      toHide.forEach(id => document.getElementById(id).style.display = 'none');
-      lifelineUsed = true;
+      if (used5050) return;
+      used5050 = true;
+      const qObj = questions[currentCategory][currentQ];
+      let count = 0;
+      for (let i = 0; i < 4; i++) {
+        if (i !== qObj.answer && count < 2) {
+          document.getElementById('options').children[i].style.display = 'none';
+          count++;
+        }
+      }
     }
 
     function quitGame() {
-      alert("You quit the game!");
+      alert(`You quit with score: ${score}`);
       location.reload();
     }
   </script>
